@@ -79,3 +79,49 @@ raw_dili |>
 
 - The yes/no labels blend many kinds of evidence (case reports, labels, different patient groups). The drugs that appear in public databases are not a random sample of all chemistry, so performance here may not transfer to every population or drug class.
 - This notebook is a classroom exercise in prediction from structure. It is not a medical device, not a regulatory submission, and not something to use to decide whether a real patient or program should take or avoid a drug without expert review.
+
+# Data Cleaning & Preprocessing
+
+### Step 1 - Turn structures into numbers (done once in R, outside this document)
+
+To keep knitting quick, we pre-build a file of numeric features: `data/dili_modeling_features.csv.gz`. From the project folder, run `Rscript scripts/featurize_dili.R` (needs Java and the `rcdk` package; see `data/README.md`). That script:
+
+- Reads the raw table (`smiles_r`, `TOXICITY`).
+- Skips SMILES that do not parse into a valid molecule.
+- Picks a standard (“canonical”) form of each SMILES and keeps one row per unique structure so duplicate drawings of the same drug do not inflate scores.
+- Writes a compressed CSV of numbers plus the canonical SMILES and the integer label.
+
+### Step 2 - What each column family means (read into this report)
+
+- `desc_*` columns (whole-molecule summaries). Examples: molecular weight (how heavy the molecule is), XLogP (how fat-loving vs. water-loving it tends to be), TPSA (polar surface area-a rough sense of how “sticky” polar parts are), counts of hydrogen-bond donors/acceptors, rotatable bonds (flexibility), rings, aromatic atom count (stored under the name `desc_NumAromaticRings` for pipeline compatibility-see `data/README.md`), fraction sp³ carbons (a shape/complexity cue), heavy atoms, heteroatoms, and Bertz complexity (a size-and-branching complexity score). `desc_qed` is a slot for a “drug-likeness” score; the bundled R script leaves it blank (missing) because the CDK path we use does not compute QED. If your saved feature file shows real QED values, that file was likely built with a different featurization run-your plots will still run.
+- `fp_*` columns (fingerprint bits). Each column is 0 or 1 for a tiny structural pattern. Together they form a circular fingerprint in the ECFP family (a common choice in cheminformatics; see Rogers & Hahn, 2010, in the References).
+
+### Step 3 - Before fitting models (inside `tidymodels`)
+
+We drop predictors that never change (useless for fitting), then subtract the mean and divide by the standard deviation for each numeric predictor so large and small columns are on a similar scale. The outcome column `dILI` is a category with plain-language levels `low_concern` and `elevated_concern`, copied from the raw 0/1 label.
+
+```{r load-features}
+feat_path <- "data/dili_modeling_features.csv.gz"
+stopifnot(file.exists(feat_path))
+
+dili <- read_csv(feat_path, show_col_types = FALSE) |>
+  mutate(
+    dILI = factor(
+      label,
+      levels = c(0, 1),
+      labels = c("low_concern", "elevated_concern")
+    )
+  )
+
+desc_cols <- names(dili)[startsWith(names(dili), "desc_")]
+fp_cols <- names(dili)[startsWith(names(dili), "fp_")]
+
+dili |>
+  summarise(
+    n = n(),
+    n_positive = sum(dILI == "elevated_concern"),
+    prevalence = mean(dILI == "elevated_concern")
+  )
+```
+
+After cleaning, the modeling table has `r nrow(dili)` unique drugs, `r length(desc_cols)` whole-molecule descriptor columns, and `r length(fp_cols)` fingerprint bit columns (plus `smiles_canon` so you can trace each row back to a structure).
