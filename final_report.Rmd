@@ -1,0 +1,52 @@
+---
+title: "CDS 101 - Final Project: Structure-Based Screening for Drug-Induced Liver Injury"
+subtitle: "Predicting drug-related liver injury concern from molecular structure (entire workflow in R)"
+author: "Zamir Osmanzai, Usman Saleem (Usaleem16), Kebron (bizabebron-ops)"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    css: "gmu-cds101.css"
+    toc: true
+    toc_depth: 3
+    number_sections: true
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  fig.width = 7,
+  fig.height = 4
+)
+```
+
+# Problem Definition
+
+Drug-induced liver injury (DILI) means liver damage that appears to be caused or worsened by a medication. It is an important reason drugs fail in development or are withdrawn after approval. This project asks a narrower, technical question: can we guess a literature-based “elevated concern” vs. “lower concern” label from a drug’s chemical structure alone? A computer model that reads structure cannot replace animal studies, clinical trials, or expert review; at best it can flag molecules for closer human follow-up.
+
+This report follows the usual CDS 101 arc: state the question, describe the data, clean and prepare it, explore patterns with plots, fit models with simple baselines, and say clearly what we can and cannot claim.
+
+### Research questions (in plain terms)
+
+1. Using only information we derive in R from each drug’s structure, how well can we predict the expert-style yes/no liver-injury concern label in the dataset?
+2. Which kind of numeric summary of the structure works best? We compare three options: (a) a long fingerprint-a pattern of 0/1 bits that encodes small structural motifs around each atom; (b) a shorter list of whole-molecule numbers such as size, polarity, and flexibility; (c) both together. We mainly judge quality by ROC-AUC (how well the model ranks high-risk drugs above low-risk ones) and also look at precision and recall for calling “elevated concern.”
+
+### Objectives
+
+- Use a public table of drugs with SMILES strings (text line drawings of chemistry) and a binary concern label.
+- Turn each SMILES into columns of numbers in R using the Chemistry Development Kit through the `rcdk` package (script `scripts/featurize_dili.R`).
+- Fit several standard classifiers in R: a dumb baseline that always guesses the most common training label; logistic regression with ridge penalty (package `glmnet`, orchestrated by `tidymodels`) on three feature sets; and a random forest (`ranger`) on the combined features. We pick tuning settings with 5-fold cross-validation on the training portion only, then measure performance one time on a separate 25% test portion we set aside at the start.
+- Be upfront about noise in labels, what the model does not see (dose, patients, metabolism), and why this is not a clinical decision tool.
+
+### Assumptions
+
+- The 0/1 labels summarize messy literature evidence; they are useful for learning but are not perfect ground truth about real-world liver risk.
+- We read chemistry from SMILES as given; we do not explore every alternate salt form or molecular shape (a real safety pipeline would dig deeper).
+- We randomly split drugs into train and test while keeping the proportion of “elevated” labels similar in each part. That matches typical classroom practice; a stricter “scaffold” split (keeping similar-looking drugs together) would stress-test new chemistry-we note that as a limitation later.
