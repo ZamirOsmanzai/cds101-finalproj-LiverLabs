@@ -50,3 +50,32 @@ This report follows the usual CDS 101 arc: state the question, describe the data
 - The 0/1 labels summarize messy literature evidence; they are useful for learning but are not perfect ground truth about real-world liver risk.
 - We read chemistry from SMILES as given; we do not explore every alternate salt form or molecular shape (a real safety pipeline would dig deeper).
 - We randomly split drugs into train and test while keeping the proportion of “elevated” labels similar in each part. That matches typical classroom practice; a stricter “scaffold” split (keeping similar-looking drugs together) would stress-test new chemistry-we note that as a limitation later.
+
+# Data Acquisition & Description
+
+We use a gold-standard table shared by the open [DILI](https://github.com/srijitseal/DILI) project (Seal *et al.* and related expert curation). Each row is one drug: a SMILES string (a standard text encoding of its molecular structure) and a `TOXICITY` column that is 1 if the curators flagged elevated liver-injury concern and 0 for lower concern in their scheme. The raw spreadsheet lives in this repo at `data/DILI_Goldstandard_1111.csv`.
+
+The Therapeutics Data Commons lists a related DILI task (on the order of 475 drugs) that many machine-learning papers use for benchmarks ([TDC toxicity tasks](https://tdcommons.ai/single_pred_tasks/tox/)). We mention it so readers can place our work in context; our numbers come from the larger CSV above because it is easy to download and rerun from a plain file.
+
+```{r load-raw-meta}
+library(readr)
+library(dplyr)
+library(forcats)
+
+raw_dili <- read_csv("data/DILI_Goldstandard_1111.csv", show_col_types = FALSE)
+glimpse(raw_dili)
+```
+
+```{r counts-raw}
+raw_dili |>
+  summarise(
+    n_rows = n(),
+    n_positive = sum(TOXICITY == 1, na.rm = TRUE),
+    prevalence = mean(TOXICITY == 1, na.rm = TRUE)
+  )
+```
+
+### Ethical and bias considerations
+
+- The yes/no labels blend many kinds of evidence (case reports, labels, different patient groups). The drugs that appear in public databases are not a random sample of all chemistry, so performance here may not transfer to every population or drug class.
+- This notebook is a classroom exercise in prediction from structure. It is not a medical device, not a regulatory submission, and not something to use to decide whether a real patient or program should take or avoid a drug without expert review.
