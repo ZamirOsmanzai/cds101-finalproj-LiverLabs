@@ -1,0 +1,105 @@
+/* GMU-branded CSS for CDS 101 RMarkdown reports (v2) */
+
+html {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  color: #222222;
+  background-color: #ffffff;
+}
+
+body {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 0 1.5rem 3rem 1.5rem;
+}
+
+/* GMU colors */
+:root {
+  --gmu-green: #006633;
+  --gmu-gold:  #ffcc33;
+}
+
+h1, h2, h3, h4 {
+  font-weight: 600;
+  color: var(--gmu-green);
+  border-bottom: 1px solid #dddddd;
+  padding-bottom: 0.2rem;
+  margin-top: 1.8rem;
+}
+
+h1 {
+  border-bottom: 3px solid var(--gmu-gold);
+  padding-bottom: 0.4rem;
+}
+
+a {
+  color: var(--gmu-green);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+code {
+  font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  background-color: #f5f5f5;
+  padding: 0.1rem 0.25rem;
+  border-radius: 3px;
+}
+
+pre {
+  background-color: #f5f5f5;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+th, td {
+  border: 1px solid #cccccc;
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+
+th {
+  background-color: #f0f5f0;
+}
+
+ul, ol {
+  margin: 0.5rem 0 0.75rem 1.4rem;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+  margin: 0.75rem auto;
+}
+
+figure {
+  margin: 1rem 0;
+  text-align: center;
+}
+
+figcaption {
+  font-size: 0.9rem;
+  color: #555555;
+}
+
+blockquote {
+  border-left: 4px solid #cccccc;
+  margin: 0.8rem 0;
+  padding: 0.4rem 0.75rem;
+  color: #555555;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid #dddddd;
+  margin: 1.5rem 0;
+}

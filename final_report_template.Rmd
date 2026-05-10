@@ -1,0 +1,147 @@
+---
+title: "CDS 101 - Final Project Report"
+author: "Group Name / Members"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    css: "gmu-cds101.css"
+    toc: true
+    toc_depth: 3
+    number_sections: true
+  pdf_document:
+    toc: true
+---
+
+> Replace this template text with your own writing, keeping the headings and overall structure aligned with the **CDS 101 project rubric**.
+
+# 1. Problem Definition
+
+- Clearly state the main problem or question you are investigating.  
+- Explain why it is interesting or important.  
+- Define the objective(s) of your analysis.  
+- Mention any key assumptions.
+
+# 2. Data Acquisition & Description
+
+- Name and source of the dataset(s).  
+- How you obtained the data (download link, API, etc.).  
+- Brief description of the variables / features (with units if relevant).  
+- Approximate size (rows, columns).  
+- Any ethical, privacy, or bias considerations (if applicable).
+
+```{r setup-data, echo=FALSE, message=FALSE, warning=FALSE}
+# Example: load a dataset (replace with your own)
+# library(readr)
+# data <- read_csv("data/your_data.csv")
+```
+
+# 3. Data Cleaning & Preprocessing
+
+Describe the steps you took to make the data usable, for example:
+
+- Handling missing values (drop, impute, etc.).  
+- Fixing types (dates, numeric vs. categorical).  
+- Removing outliers (if done).  
+- Creating new features (feature engineering).  
+- Any scaling or encoding.
+
+```{r cleaning, eval=FALSE}
+# Example pseudo-code for cleaning:
+# data_clean <- data |>
+#   dplyr::filter(!is.na(target_variable)) |>
+#   dplyr::mutate(
+#     new_feature = some_transformation(old_feature)
+#   )
+```
+
+# 4. Exploratory Data Analysis (EDA)
+
+This section maps directly to the **EDA** part of the rubric:
+
+- Summary statistics  
+- Visualizations  
+- Interpretation connected to the research question  
+
+```{r eda-summary, message=FALSE, warning=FALSE}
+# library(dplyr)
+# summary(data_clean)
+```
+
+```{r eda-plot-example, message=FALSE, warning=FALSE, fig.cap="Example histogram of a numeric variable (EDA rubric)."}
+# library(ggplot2)
+# ggplot(data_clean, aes(x = some_numeric_variable)) +
+#   geom_histogram(binwidth = 5, color = "white") +
+#   labs(x = "Some Variable", y = "Count", title = "Distribution of Some Variable")
+```
+
+# 5. Visualization Quality and Storytelling
+
+Use this section to satisfy the **Visualization Quality** rubric criterion:
+
+- Explain why your plot types are appropriate.  
+- Comment on labels, legends, colors, and overall readability.  
+- Mention any steps you took to make plots accessible and interpretable.
+
+# 6. Modeling Approach
+
+Explain how you framed the problem and which models you chose:
+
+- Type of task (regression, classification, etc.).  
+- Baseline model or heuristic, if used.  
+- Main model(s) chosen and why they are appropriate.
+
+# 7. Model Implementation & Evaluation
+
+This corresponds to the **Model Implementation & Evaluation** rubric criterion.
+
+Describe:
+
+- Features used.  
+- Data splitting strategy (train/test or cross-validation).  
+- Metrics used (accuracy, F1, RMSE, etc.).  
+- Tables/plots summarizing performance.  
+- A short interpretation of each metric/plot.
+
+```{r modeling, eval=FALSE}
+# Example structure:
+# set.seed(123)
+# train_index <- sample(seq_len(nrow(data_clean)), size = 0.8 * nrow(data_clean))
+# train <- data_clean[train_index, ]
+# test  <- data_clean[-train_index, ]
+#
+# model <- glm(target ~ ., data = train, family = binomial)
+# preds <- predict(model, newdata = test, type = "response")
+# # compute metrics...
+```
+
+# 8. Conclusions & Recommendations
+
+Summarize the key takeaways:
+
+- Answer your original research question(s) directly.  
+- Highlight the most important patterns or relationships you found.  
+- Discuss limitations (data size, bias, missing variables, etc.).  
+- Suggest possible extensions or future work.
+
+# 9. Code Quality & Reproducibility
+
+Briefly document how someone else can reproduce your results:
+
+- Which R scripts or Rmd files to run.  
+- Any required R packages.  
+
+```{r session-info, echo=FALSE}
+sessionInfo()
+```
+
+# 10. References
+
+List any references you used, such as:
+
+- Dataset documentation.  
+- Research papers or articles.  
+- Tutorials or blog posts.
+
+# Appendix (Optional)
+
+Include extra plots, diagnostic checks, or model comparisons if needed.

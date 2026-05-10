@@ -1,0 +1,183 @@
+---
+title: "CDS 101 - Example EDA Walkthrough (Rubric-Aligned)"
+author: "Your Name Here"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    css: "../gmu-cds101.css"
+    toc: true
+    toc_depth: 2
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE
+)
+library(ggplot2)
+library(dplyr)
+```
+
+# 1. Introduction (Context for Problem Definition)
+
+This mini notebook demonstrates a simple **Exploratory Data Analysis (EDA)** workflow using a small sample dataset.
+
+Rubric connections:
+
+- Helps with **Problem Definition** by clarifying what variables exist.  
+- Directly supports the **EDA** and **Visualization Quality** criteria.
+
+We will:
+
+- Load a sample dataset (`data/sample_data.csv`)
+- Compute basic summary statistics
+- Create several example plots:
+  - Histogram
+  - Boxplot
+  - Scatter plot
+- Add short interpretations that explicitly connect visuals to potential research questions.
+
+# 2. Load the Data (Data Acquisition & Description)
+
+This chunk illustrates how to **load** and **inspect** your data, covering the **Data Acquisition & Description** rubric criterion.
+
+```{r load-data}
+data <- read.csv("../data/sample_data.csv")
+str(data)
+head(data)
+```
+
+The columns are:
+
+- `x`: a numeric variable (e.g., some measurement)  
+- `y`: another numeric variable related to `x`  
+- `group`: a categorical variable with two groups (A and B)  
+
+Here you would describe, in your own project:
+
+- Where the data came from (source/link)  
+- What each variable represents  
+- How many rows and columns you have  
+
+# 3. Summary Statistics (EDA - Numeric Summaries)
+
+This section contributes to the **EDA** rubric by showing numeric summaries.
+
+```{r summary}
+summary(data)
+
+data %>%
+  group_by(group) %>%
+  summarise(
+    mean_x = mean(x),
+    sd_x   = sd(x),
+    mean_y = mean(y),
+    sd_y   = sd(y),
+    .groups = "drop"
+  )
+```
+
+**How this satisfies the EDA rubric:**
+
+- We report descriptive statistics (mean, sd, etc.).  
+- We compare groups A and B, which could relate to a research question like:
+
+> “Do groups A and B differ in their average values of `x` and `y`?”
+
+# 4. Histogram of `x` (EDA + Visualization Quality)
+
+This plot addresses both **EDA** and **Visualization Quality**:
+
+- It reveals the distribution of `x`.  
+- It uses appropriate labels and a clear title.
+
+```{r hist-x, fig.cap="Histogram of x (EDA rubric: distribution of a key numeric variable)."}
+ggplot(data, aes(x = x)) +
+  geom_histogram(bins = 15, color = "white") +
+  labs(
+    title = "Distribution of x",
+    x = "x",
+    y = "Count"
+  )
+```
+
+**Interpretation (example):**
+
+- Comment on the shape (e.g., roughly symmetric, skewed, etc.).  
+- Note any potential outliers.  
+
+You would tie this back to your research question, e.g.:
+
+> “If we use `x` as a predictor, its roughly normal distribution is convenient for certain models.”
+
+# 5. Boxplot of `y` by Group (EDA: Comparing Groups)
+
+This visualization supports:
+
+- Comparing distributions between groups (**EDA**).  
+- Showing a clear, labeled plot (**Visualization Quality**).
+
+```{r boxplot-y-group, fig.cap="Boxplot of y by group (EDA rubric: group comparison)."}
+ggplot(data, aes(x = group, y = y)) +
+  geom_boxplot() +
+  labs(
+    title = "Distribution of y by Group",
+    x = "Group",
+    y = "y"
+  )
+```
+
+**Interpretation (example):**
+
+- How do medians compare between A and B?  
+- Which group appears more variable?  
+- Are there visible outliers?  
+
+You might relate this to a question such as:
+
+> “Does group membership (A vs B) appear to influence `y`?”
+
+# 6. Scatter Plot of `x` vs `y` (EDA: Relationships)
+
+This addresses **EDA** and prepares for **Modeling Approach** by visualizing relationships between variables.
+
+```{r scatter, fig.cap="Scatter plot of y versus x, colored by group (EDA rubric: relationship between variables)."}
+ggplot(data, aes(x = x, y = y, color = group)) +
+  geom_point(alpha = 0.7) +
+  labs(
+    title = "Relationship Between x and y by Group",
+    x = "x",
+    y = "y"
+  )
+```
+
+**Interpretation (example):**
+
+- Describe the direction and strength of the relationship (e.g., roughly linear and positive).  
+- Note whether points for groups A and B occupy different regions (interaction possibility).  
+
+This directly motivates modeling choices:
+
+> “Because `y` increases with `x` and the relationship may differ by group, we might fit a regression model with an interaction term between `x` and `group`.”
+
+# 7. Linking EDA to the Project Rubric
+
+To fully satisfy the **EDA** and **Visualization Quality** rubric criteria in your own project:
+
+- Include:
+  - At least one distribution plot for a key variable.  
+  - At least one group comparison plot (if you have categorical variables).  
+  - At least one relationship plot (e.g., scatter plot) for important pairs of variables.  
+
+- For each figure:
+  - Provide a clear title and axis labels.  
+  - Write 2-3 sentences interpreting the plot in the context of your research question.  
+  - Briefly mention how the plot informs your later modeling decisions.
+
+Use this notebook as a pattern, but replace:
+
+- `sample_data.csv` with your actual dataset.  
+- `x`, `y`, and `group` with your own variables.  
+- The example interpretations with your own analysis and language.

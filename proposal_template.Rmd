@@ -1,0 +1,94 @@
+---
+title: "CDS 101 - Final Project Proposal"
+author: "Group Name / Members"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    css: "gmu-cds101.css"
+    toc: true
+    toc_depth: 3
+    number_sections: true
+  pdf_document:
+    toc: true
+---
+
+## 1. Dataset
+
+**Dataset Name:**  
+**Source / Platform (Kaggle, UCI, gov, etc.):**  
+
+**Short Description:**  
+- What does this dataset contain?  
+- What are the main variables (features)?  
+- Approximate number of rows / columns?  
+- Why is this dataset interesting or relevant?
+
+---
+
+## 2. Dataset Link
+
+Paste a direct URL to the dataset (or documentation) here:
+
+`https://...`
+
+---
+
+## 3. Research Question
+
+Write 1-2 clear, specific, data-driven questions you want to answer.
+
+**Main research question:**
+
+> _Type your main question here._
+
+**Optional secondary question(s):**
+
+> _List any additional questions here._
+
+---
+
+## 4. Modeling Approach / Models Used
+
+Describe what you plan to do analytically.
+
+- Type of task (check all that apply):
+  - [ ] Exploratory analysis only  
+  - [ ] Regression (predicting a numeric value)  
+  - [ ] Classification (predicting categories/labels)  
+  - [ ] Clustering / unsupervised patterns  
+  - [ ] Other (describe)
+
+**Planned models / methods:**
+
+Examples:  
+- Linear regression, logistic regression  
+- Decision tree (if allowed), k-means  
+- Baseline model (e.g., majority class, mean predictor)
+
+**Planned evaluation metrics:**
+
+Examples:  
+- Regression: RMSE, MAE, \(R^2\)  
+- Classification: accuracy, precision/recall, F1, confusion matrix  
+
+---
+
+## 5. Expected Results
+
+What do you expect to find? It’s okay if this changes later.
+
+- Bullet point 1 (e.g., “We expect feature X to be a strong predictor of Y.”)  
+- Bullet point 2  
+- Bullet point 3  
+
+---
+
+## 6. Potential Challenges (Optional)
+
+- What might be difficult? (missing data, noisy labels, small sample size, etc.)  
+- How might you handle or mitigate these issues?
+
+---
+
+**Submitted on:**  
+(Date)

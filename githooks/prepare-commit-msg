@@ -1,0 +1,6 @@
+#!/bin/sh
+# Strip Cursor agent trailer (install: git config core.hooksPath githooks)
+if [ -n "$1" ] && [ -f "$1" ]; then
+  sed -i '' '/Co-authored-by: Cursor <cursoragent@cursor.com>/d' "$1" 2>/dev/null || \
+    sed -i '/Co-authored-by: Cursor <cursoragent@cursor.com>/d' "$1" 2>/dev/null || true
+fi

@@ -1,0 +1,29 @@
+# R / RStudio
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# Reports
+reports/*.html
+reports/*.pdf
+
+# Knitr / local knit artifacts (keep sources; HTML often rebuilt)
+final_report_cache/
+final_report_files/
+final_report.html
+proposal.html
+*.knit.md
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Large data (students can modify as needed)
+data/*.zip
+data/*.zst
+# Allow versioned compressed modeling table; ignore other bulky gz dumps
+data/*.gz
+!data/dili_modeling_features.csv.gz

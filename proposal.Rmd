@@ -1,0 +1,83 @@
+---
+title: "CDS 101 - Final Project Proposal: Structure-Based DILI Screening"
+author: "Zamir Osmanzai, Usman Saleem (Usaleem16), Kebron (bizabebron-ops)"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    css: "gmu-cds101.css"
+    toc: true
+    toc_depth: 2
+    number_sections: true
+---
+
+## Dataset
+
+Dataset name: Expert-curated drug-induced liver injury (DILI) gold standard (SMILES + binary toxicity flag).
+
+Source / platform: Public repository [srijitseal/DILI](https://github.com/srijitseal/DILI) (`data/DILI_Goldstandard_1111.csv`), aligned conceptually with the Therapeutics Data Commons [Toxicity / DILI](https://tdcommons.ai/single_pred_tasks/tox/) benchmark used in ML literature.
+
+Short description: Each row is a small-molecule structure (SMILES) with a binary `TOXICITY` label summarizing expert/literature concern for liver injury. We parse SMILES and compute descriptors and circular fingerprints in R with `rcdk` (CDK), then model in R with `tidymodels`.
+
+Approximate size: ~1.1k rows in the raw table; ~1.1k unique canonical structures after featurization (see `data/README.md`).
+
+Relevance: Early *in silico* prioritization is a core workflow in computational drug discovery; this project practices the full pipeline from raw structure to an evaluated classifier with honest limits on clinical validity.
+
+---
+
+## Dataset link
+
+- Gold-standard CSV (versioned in this repo): `https://raw.githubusercontent.com/srijitseal/DILI/main/data/DILI_Goldstandard_1111.csv`
+- TDC documentation (related benchmark): `https://tdcommons.ai/single_pred_tasks/tox/`
+
+---
+
+## Research question
+
+Main research question:
+
+> How accurately can we predict literature-annotated DILI concern from SMILES-derived molecular features in R, and which representation is most informative on held-out data: physicochemical descriptors, circular fingerprints, or their combination?
+
+Secondary question:
+
+> Does a non-linear ensemble (random forest) improve discrimination or calibration relative to ridge-regularized logistic regression on the same splits?
+
+---
+
+## Modeling approach / models used
+
+- [ ] Exploratory analysis only  
+- [ ] Regression (predicting a numeric value)  
+- [x] Classification (predicting DILI concern category)  
+- [ ] Clustering / unsupervised patterns  
+- [ ] Other (describe)
+
+Planned / implemented models
+
+- Baseline: constant prediction at the training-set prevalence (probabilistic ROC baseline) and majority-class hard labels.
+- Ridge logistic regression (`glmnet` engine via `tidymodels`) on three feature blocks: descriptors only, fingerprints only, combined - with tuned penalty and 5-fold stratified CV on the training split.
+- Random forest (`ranger`) on the combined feature space with tuned `mtry` and `min_n`.
+
+Resampling / evaluation
+
+- Stratified train/test split (75/25), metrics on the test fold only for final comparison.
+- Metrics: ROC-AUC, PR-AUC, accuracy, sensitivity, specificity, Youden’s J, F1 (`yardstick`).
+
+---
+
+## Expected results
+
+- We expect fingerprints plus descriptors to match or beat single-representation models, because substructural environments and global physicochemistry capture complementary cues.
+- We expect ridge logistic regression to be a strong baseline because high-dimensional fingerprints need shrinkage; the random forest may add value if non-additive interactions matter, or may overfit slightly under limited data.
+- We do not expect near-perfect accuracy: DILI is multifactorial and labels are noisy proxies for clinical risk.
+
+---
+
+## Potential challenges
+
+- Invalid or ambiguous SMILES, salts, and protonation - mitigated by CDK parsing and canonicalization in R; remaining ambiguity is a documented limitation.
+- Class imbalance / label noise - mitigated by stratified splits and reporting PR-AUC alongside ROC-AUC.
+- Leakage if duplicates were kept - mitigated by deduplicating canonical SMILES before modeling.
+
+---
+
+Submitted on: `r format(Sys.Date(), "%B %d, %Y")`
