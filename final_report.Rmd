@@ -149,3 +149,64 @@ dili |>
 ```
 
 In this table, “elevated concern” is usually the majority class (often well above half of the rows). That means a model could get a decent accuracy by almost always guessing “elevated,” even if it is not truly informative. So we lean on metrics that are harder to “game” that way-especially ROC-AUC (ranking quality) and precision-recall, plus sensitivity (fraction of elevated cases caught) and specificity (fraction of lower-concern cases correctly left alone) on the held-out test drugs the model never trained on.
+
+## Descriptor distributions by class
+
+```{r eda-box, fig.cap="Example numeric summaries of chemistry, split by label. Overlap is expected when a single number tries to stand in for a complex safety outcome."}
+toplot <- intersect(
+  c("desc_MolWt", "desc_MolLogP", "desc_TPSA", "desc_qed"),
+  desc_cols
+)
+# Omit columns that are entirely missing (e.g. QED when not computed in R featurizer)
+toplot <- toplot[vapply(dili[toplot], function(x) any(!is.na(x)), logical(1))]
+
+desc_labs <- c(
+  desc_MolWt = "Molecular weight",
+  desc_MolLogP = "XLogP",
+  desc_TPSA = "TPSA",
+  desc_qed = "QED (drug-likeness)"
+)
+
+dili |>
+  select(dILI, all_of(toplot)) |>
+  tidyr::pivot_longer(-dILI, names_to = "descriptor", values_to = "value") |>
+  mutate(
+    descriptor = forcats::fct_inorder(factor(descriptor)),
+    descriptor_lab = unname(desc_labs[as.character(descriptor)])
+  ) |>
+  mutate(descriptor_lab = forcats::fct_inorder(factor(descriptor_lab))) |>
+  ggplot(aes(dILI, value, fill = dILI)) +
+  geom_boxplot(outlier.alpha = 0.35, show.legend = FALSE) +
+  facet_wrap(~descriptor_lab, scales = "free_y") +
+  scale_fill_brewer(palette = "Pastel2") +
+  labs(
+    title = "Selected molecular descriptors vs. label",
+    x = NULL,
+    y = "Value"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 20, hjust = 1))
+```
+
+How to read the boxplots: for each drug property on its own, the two label groups overlap a lot. That is normal: liver injury depends on biology and dosing we do not feed into the model, and the labels themselves are imperfect. The hope is that many weak clues together (through the models below) do better than any single plot.
+
+## Linear correlations among descriptors
+
+```{r eda-corr, fig.cap="Correlation heatmap: brighter colors mean two descriptors tend to increase or decrease together across drugs."}
+library(corrplot)
+
+cor_mat <- dili |>
+  select(all_of(desc_cols)) |>
+  cor(use = "pairwise.complete.obs")
+
+corrplot(
+  cor_mat,
+  method = "color",
+  type = "upper",
+  tl.cex = 0.7,
+  mar = c(0, 0, 2, 0),
+  title = "Which descriptors move together? (many pairs are correlated)"
+)
+```
+
+Many descriptors rise and fall together (bright off-diagonal patches). When predictors are correlated, a giant vanilla logistic regression can overreact to noise. Ridge logistic regression (what we use) is a standard fix: it shrinks coefficients toward zero so the model stays stable when there are many related columns-especially important for the long fingerprint block.
