@@ -210,3 +210,13 @@ corrplot(
 ```
 
 Many descriptors rise and fall together (bright off-diagonal patches). When predictors are correlated, a giant vanilla logistic regression can overreact to noise. Ridge logistic regression (what we use) is a standard fix: it shrinks coefficients toward zero so the model stays stable when there are many related columns-especially important for the long fingerprint block.
+
+# Visualization Quality and Storytelling
+
+- Side-by-side boxplots compare each numeric property for “lower” vs. “elevated” concern.  
+- The heatmap shows which properties move together.  
+- ROC curves show, across all possible cutoff rules, the tradeoff between true alarms (vertical axis) and false alarms (horizontal axis) when ranking drugs by predicted risk. A curve closer to the upper-left is better; the dashed diagonal is random guessing.  
+- Precision-recall curves focus on the elevated class: if we flag the model’s top guesses, how many are correct (precision) and what fraction of all elevated drugs did we catch (recall)?  
+- The horizontal bar chart from the random forest highlights which inputs the ensemble leaned on most (treat as hints, not causal proof).  
+
+We use ColorBrewer colors and plain-language facet titles where we can so figures read quickly on screen or on paper.
