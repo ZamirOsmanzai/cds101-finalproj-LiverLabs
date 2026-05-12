@@ -220,3 +220,23 @@ Many descriptors rise and fall together (bright off-diagonal patches). When pred
 - The horizontal bar chart from the random forest highlights which inputs the ensemble leaned on most (treat as hints, not causal proof).  
 
 We use ColorBrewer colors and plain-language facet titles where we can so figures read quickly on screen or on paper.
+
+# Modeling Approach
+
+Each drug is either `elevated_concern` or `low_concern`. Models output a probability of elevated concern and a predicted class once we pick a cutoff (the software defaults handle that for the confusion matrix).
+
+### Baselines and comparators
+
+1. Majority baseline. Always predict whichever label appeared most often in the training set, and assign every drug the same baseline probability equal to the training fraction of elevated cases. This is a sanity check: a serious model should beat “always guess the popular answer.”
+2. Ridge logistic regression (R packages `glmnet` and `tidymodels`). Think “logistic regression, but the math penalizes huge coefficients so the fit does not chase noise.” We try 12 penalty strengths on a log scale, using 5-fold cross-validation on the training 75% only to pick a strength, then refit on the full training 75% and score the held-out 25%.
+3. Random forest (`ranger`). Many decision trees vote; each tree sees a random subset of rows and columns, which often helps with nonlinear patterns. We tune two knobs (`mtry`, `min_n`) on the same 5-fold training-only cross-validation, then evaluate on the same held-out test split.
+
+### Three ways we feed the numbers in
+
+- Descriptors only - short list, easier to relate to chemistry intuition.  
+- Fingerprints only - long bit vector, good at capturing local shape in the graph.  
+- Both together - asks whether the two views add information.
+
+### How the data are split
+
+We use `rsample::initial_split` to put 75% of drugs in training and 25% in testing, keeping roughly the same mix of labels in each part (stratified split). Parameter choices are tuned only on training; the test drugs are touched once at the end for the tables and plots. `set.seed(2026)` makes the split and forest randomness repeatable on a fresh run.
