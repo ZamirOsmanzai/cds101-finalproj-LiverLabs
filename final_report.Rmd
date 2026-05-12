@@ -240,3 +240,88 @@ Each drug is either `elevated_concern` or `low_concern`. Models output a probabi
 ### How the data are split
 
 We use `rsample::initial_split` to put 75% of drugs in training and 25% in testing, keeping roughly the same mix of labels in each part (stratified split). Parameter choices are tuned only on training; the test drugs are touched once at the end for the tables and plots. `set.seed(2026)` makes the split and forest randomness repeatable on a fresh run.
+
+# Model Implementation & Evaluation
+
+The code chunks below run the steps just described, then print a metric table, ROC and precision-recall plots, variable importance for the forest, and a confusion matrix for whichever model had the best test ROC-AUC (excluding the trivial majority baseline).
+
+```{r modeling-prep}
+library(tidymodels)
+library(workflows)
+library(recipes)
+library(parsnip)
+library(tune)
+library(dials)
+library(yardstick)
+library(purrr)
+library(ranger)
+library(glmnet)
+
+set.seed(2026)
+
+data_model <- dili |>
+  select(dILI, all_of(desc_cols), all_of(fp_cols))
+
+split_obj <- initial_split(data_model, prop = 0.75, strata = dILI)
+train_data <- training(split_obj)
+test_data <- testing(split_obj)
+
+make_recipe <- function(train_df) {
+  recipe(dILI ~ ., data = train_df) |>
+    step_zv(all_predictors()) |>
+    step_normalize(all_numeric_predictors())
+}
+
+lr_spec <- logistic_reg(penalty = tune(), mixture = 0) |>
+  set_engine("glmnet") |>
+  set_mode("classification")
+
+penalty_grid <- grid_regular(
+  penalty(range = c(-5, 0)),
+  levels = 12
+)
+
+tune_lr <- function(feature_cols, label) {
+  train_slice <- train_data |> select(dILI, all_of(feature_cols))
+  folds <- vfold_cv(train_slice, v = 5, strata = dILI)
+  rec <- make_recipe(train_slice)
+  wf <- workflow() |>
+    add_recipe(rec) |>
+    add_model(lr_spec)
+
+  tuned <- tune_grid(
+    wf,
+    resamples = folds,
+    grid = penalty_grid,
+    metrics = metric_set(roc_auc, pr_auc, accuracy),
+    control = control_grid(save_pred = FALSE, verbose = FALSE)
+  )
+
+  best_params <- select_best(tuned, metric = "roc_auc")
+  final_wf <- finalize_workflow(wf, best_params)
+  fit_train <- fit(final_wf, data = train_data |> select(dILI, all_of(feature_cols)))
+
+  preds <- predict(fit_train, test_data |> select(dILI, all_of(feature_cols)), type = "prob")
+  hard <- predict(fit_train, test_data |> select(dILI, all_of(feature_cols)), type = "class")
+
+  tibble::tibble(
+    truth = test_data$dILI,
+    .pred_low_concern = preds$.pred_low_concern,
+    .pred_elevated_concern = preds$.pred_elevated_concern,
+    .pred_class = hard$.pred_class,
+    model = label
+  )
+}
+
+roc_rows <- function(pred_tbl) {
+  m <- pred_tbl$model[1]
+  roc_curve(pred_tbl, truth, .pred_elevated_concern, event_level = "second") |>
+    mutate(model = m)
+}
+
+pr_rows <- function(pred_tbl) {
+  m <- pred_tbl$model[1]
+  pr_curve(pred_tbl, truth, .pred_elevated_concern, event_level = "second") |>
+    mutate(model = m)
+}
+```
