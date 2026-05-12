@@ -378,3 +378,60 @@ pred_rf <- test_data |>
   dplyr::bind_cols(rf_prob, rf_cls) |>
   dplyr::mutate(model = "Random forest (combined)")
 ```
+
+```{r baseline-majority}
+maj_class <- train_data |>
+  count(dILI, sort = TRUE) |>
+  slice_head(n = 1) |>
+  pull(dILI)
+
+p_pos_train <- mean(train_data$dILI == "elevated_concern", na.rm = TRUE)
+
+pred_maj <- tibble::tibble(
+  truth = test_data$dILI,
+  .pred_elevated_concern = p_pos_train,
+  .pred_low_concern = 1 - p_pos_train,
+  .pred_class = maj_class,
+  model = "Majority baseline (train prevalence)"
+)
+```
+
+```{r metrics-table}
+summarise_metrics <- function(df) {
+  bind_rows(
+    roc_auc(df, truth, .pred_elevated_concern, event_level = "second"),
+    pr_auc(df, truth, .pred_elevated_concern, event_level = "second"),
+    accuracy(df, truth, .pred_class),
+    sens(df, truth, .pred_class, event_level = "second"),
+    spec(df, truth, .pred_class, event_level = "second"),
+    j_index(df, truth, .pred_class, event_level = "second"),
+    f_meas(df, truth, .pred_class, event_level = "second")
+  )
+}
+
+metrics_tbl <- bind_rows(
+  summarise_metrics(pred_maj) |> mutate(model = pred_maj$model[1]),
+  summarise_metrics(pred_desc) |> mutate(model = pred_desc$model[1]),
+  summarise_metrics(pred_fp) |> mutate(model = pred_fp$model[1]),
+  summarise_metrics(pred_both) |> mutate(model = pred_both$model[1]),
+  summarise_metrics(pred_rf) |> mutate(model = pred_rf$model[1])
+) |>
+  mutate(.estimate = round(.estimate, 3)) |>
+  dplyr::select(model, .metric, .estimate) |>
+  arrange(.metric, model)
+
+knitr::kable(
+  metrics_tbl,
+  caption = "Test-set performance (25% of drugs held out; models never trained on these rows). Elevated concern = positive event."
+)
+```
+
+### How to read the table (short glossary)
+
+- `roc_auc` - Area under the ROC curve. 1.0 means perfect ranking of high-risk above low-risk drugs; 0.5 is about like tossing a coin. It does not depend on one specific cutoff, which makes it easy to compare models fairly.  
+- `pr_auc` - Area under the precision-recall curve. Useful when you care about catching elevated cases without flooding readers with false alarms.  
+- `accuracy` - Fraction of correct class guesses at the model’s default cutoff. Can look misleadingly high when one class dominates, so read it next to sensitivity/specificity.  
+- `sens` (sensitivity) - Of all true elevated drugs, what share did we flag?  
+- `spec` (specificity) - Of all true lower-concern drugs, what share did we correctly leave unflagged?  
+- `j_index` - A single number that rewards balancing sensitivity and specificity (Youden’s *J*).  
+- `f_meas` - F1 score: harmonic blend of precision and recall for the elevated class at the default cutoff.
