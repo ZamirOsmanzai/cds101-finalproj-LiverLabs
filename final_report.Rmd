@@ -325,3 +325,56 @@ pr_rows <- function(pred_tbl) {
     mutate(model = m)
 }
 ```
+
+```{r modeling-tune-glmnet, cache=TRUE}
+pred_desc <- tune_lr(desc_cols, "Penalized LR (descriptors)")
+pred_fp <- tune_lr(fp_cols, "Penalized LR (fingerprints)")
+pred_both <- tune_lr(c(desc_cols, fp_cols), "Penalized LR (combined)")
+```
+
+```{r modeling-rf, cache=TRUE}
+rf_rec <- recipe(dILI ~ ., data = train_data) |>
+  step_zv(all_predictors()) |>
+  step_normalize(all_numeric_predictors())
+
+rf_spec <- rand_forest(
+  mtry = tune(),
+  min_n = tune(),
+  trees = 400
+) |>
+  set_engine("ranger", importance = "permutation", seed = 2026) |>
+  set_mode("classification")
+
+rf_wf <- workflow() |>
+  add_recipe(rf_rec) |>
+  add_model(rf_spec)
+
+p_rf <- ncol(train_data) - 1L
+mtry_hi <- max(2L, min(40L, 3L * floor(sqrt(p_rf))))
+rf_grid <- grid_regular(
+  mtry(range = c(2, mtry_hi)),
+  min_n(range = c(2, 20)),
+  levels = 3
+)
+
+cv_rf <- vfold_cv(train_data, v = 5, strata = dILI)
+
+rf_tune <- tune_grid(
+  rf_wf,
+  resamples = cv_rf,
+  grid = rf_grid,
+  metrics = metric_set(roc_auc, pr_auc, accuracy),
+  control = control_grid(save_pred = FALSE, verbose = FALSE)
+)
+
+rf_best <- finalize_workflow(rf_wf, select_best(rf_tune, metric = "roc_auc"))
+rf_fit <- fit(rf_best, data = train_data)
+
+rf_prob <- predict(rf_fit, test_data, type = "prob")
+rf_cls <- predict(rf_fit, test_data, type = "class")
+
+pred_rf <- test_data |>
+  dplyr::select(truth = dILI) |>
+  dplyr::bind_cols(rf_prob, rf_cls) |>
+  dplyr::mutate(model = "Random forest (combined)")
+```
