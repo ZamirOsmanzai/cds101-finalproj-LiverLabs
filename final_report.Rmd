@@ -435,3 +435,87 @@ knitr::kable(
 - `spec` (specificity) - Of all true lower-concern drugs, what share did we correctly leave unflagged?  
 - `j_index` - A single number that rewards balancing sensitivity and specificity (Youden’s *J*).  
 - `f_meas` - F1 score: harmonic blend of precision and recall for the elevated class at the default cutoff.
+
+```{r roc-plot, fig.cap="ROC curves: each line is one model's tradeoff between true and false positives on held-out test drugs."}
+roc_combined <- bind_rows(
+  roc_rows(pred_desc),
+  roc_rows(pred_fp),
+  roc_rows(pred_both),
+  roc_rows(pred_rf)
+)
+
+ggplot(roc_combined, aes(1 - specificity, sensitivity, color = model)) +
+  geom_abline(linetype = "dashed", color = "grey70") +
+  geom_line(linewidth = 0.9) +
+  coord_equal() +
+  labs(
+    title = "ROC: how well does each model rank elevated concern?",
+    x = "False positive rate",
+    y = "True positive rate",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+```
+
+```{r pr-plot, fig.cap="Precision-recall curves: focus on how well each model finds elevated-concern drugs without too many false flags (test set)."}
+pr_combined <- bind_rows(
+  pr_rows(pred_desc),
+  pr_rows(pred_fp),
+  pr_rows(pred_both),
+  pr_rows(pred_rf)
+)
+
+ggplot(pr_combined, aes(recall, precision, color = model)) +
+  geom_line(linewidth = 0.9) +
+  labs(
+    title = "Precision vs. recall for elevated concern (test)",
+    x = "Recall (sensitivity)",
+    y = "Precision",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+```
+
+```{r rf-importance, fig.cap="Random forest: which numeric inputs mattered most when their values were shuffled? (Exploratory; not causal.)", fig.alt="Horizontal bar chart of the largest random forest permutation importances."}
+library(vip)
+
+vip_plot <- vip::vip(
+  extract_fit_parsnip(rf_fit),
+  num_features = 18
+) +
+  labs(
+    title = "Which features did the random forest lean on?",
+    subtitle = "Higher bars = larger average impact when values are shuffled (association, not proof of causation)"
+  ) +
+  theme_minimal(base_size = 12)
+
+print(vip_plot)
+```
+
+```{r confusion-best, fig.cap="Confusion matrix for the model with the best ROC-AUC on the test set: counts of correct vs. mistaken class labels.", fig.alt="Heatmap of predicted versus observed DILI class counts."}
+best_name <- metrics_tbl |>
+  filter(.metric == "roc_auc", model != "Majority baseline (train prevalence)") |>
+  slice_max(.estimate, n = 1) |>
+  pull(model)
+
+best_preds <- switch(
+  as.character(best_name),
+  "Penalized LR (descriptors)" = pred_desc,
+  "Penalized LR (fingerprints)" = pred_fp,
+  "Penalized LR (combined)" = pred_both,
+  pred_rf
+)
+
+cm <- conf_mat(
+  best_preds,
+  truth,
+  estimate = .pred_class
+)
+
+ggplot2::autoplot(cm, type = "heatmap") +
+  scale_fill_gradient(low = "white", high = "#005EB8") +
+  labs(title = paste("Confusion matrix:", best_name)) +
+  theme_minimal(base_size = 13)
+```
