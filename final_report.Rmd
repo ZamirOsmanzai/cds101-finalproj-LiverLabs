@@ -519,3 +519,53 @@ ggplot2::autoplot(cm, type = "heatmap") +
   labs(title = paste("Confusion matrix:", best_name)) +
   theme_minimal(base_size = 13)
 ```
+
+# Conclusions & Recommendations
+
+```{r conclusions-numbers, echo=FALSE}
+roc_tbl <- metrics_tbl |> dplyr::filter(.metric == "roc_auc")
+best_roc <- roc_tbl |> dplyr::slice_max(.estimate, n = 1)
+maj_roc <- roc_tbl |> dplyr::filter(model == "Majority baseline (train prevalence)")
+```
+
+### Findings
+
+- On the held-out test drugs, `r best_roc$model` achieved the highest ROC-AUC (`r best_roc$.estimate`), compared with `r maj_roc$.estimate` for the “always guess the training majority” baseline. In words: structure-based numbers helped rank risk better than memorizing the overall label rate.
+- The three ridge logistic models isolate a clean apples-to-apples comparison of fingerprints vs. descriptors vs. both under the same split. The random forest on the combined inputs is a flexible alternative; its importance bar chart suggests which columns drove votes-treat that as exploration, not chemistry gospel.
+- The boxplots already hinted that no single property cleanly separates the classes; the models are doing the expected job of combining many small hints.
+
+### Limitations
+
+- Labels mix many real-world factors (dose, duration, patient health, drug combinations). We only see structure, so the model cannot learn true clinical risk.  
+- Random train/test split can overstate how well we would do on brand-new kinds of chemistry; a scaffold split (keep similar-looking drugs together) is a tougher, more realistic stress test for discovery teams ([TDC toxicity tasks](https://tdcommons.ai/single_pred_tasks/tox/) discuss related benchmarking culture).  
+- How salts are removed and how many hydrogens are implicit can change fingerprints and descriptors; different software choices can shift scores slightly.
+
+### Recommendations
+
+- Treat any score as triage, not truth: pair with chemist or toxicologist review before acting on a hit list.  
+- Course-style extensions in R could add a scaffold split and show how much ROC-AUC moves-a persuasive story for non-experts about why the evaluation design matters.
+
+# Code Quality & Reproducibility
+
+Anyone with R installed should be able to recreate the analysis roughly as follows:
+
+1. Install R packages: open R in the project folder and run `source("install_packages.R")`.  
+2. (Optional) Rebuild the feature file if you want to regenerate numbers from raw SMILES: in Terminal, `Rscript scripts/featurize_dili.R` (needs Java; details in `data/README.md`).  
+3. Knit the final report: the YAML matches the course template (`html_document` with `gmu-cds101.css`, plus `pdf_document` with XeLaTeX). In RStudio, **Knit** uses the first format (HTML) unless you pick another from the knit dropdown. From the project root you can run `make report-html` → `reports/final_report.html` or `make report-pdf` → `reports/final_report.pdf`.  
+4. LaTeX for PDF: if `make report-pdf` complains about LaTeX, install a small distribution with `install.packages("tinytex"); tinytex::install_tinytex()` once, or use MacTeX/TeX Live. The PDF output uses XeLaTeX so Unicode in the text compiles cleanly.  
+5. Other Makefile shortcuts (optional): `make featurize` rebuilds features; `make proposal-html` knits the proposal to `reports/proposal.html`.
+
+```{r session-info, echo=FALSE}
+sessionInfo()
+```
+
+# References
+
+- Therapeutics Data Commons (TDC) toxicity prediction tasks (includes related DILI benchmarks): <https://tdcommons.ai/single_pred_tasks/tox/>.
+- Seal *et al.* DILI data resource and gold-standard curation (GitHub): <https://github.com/srijitseal/DILI>.
+- Kuhn & Wickham (2020). *Tidymodels: a collection of packages for modeling and machine learning using tidyverse principles.* <https://www.tidymodels.org>.
+- Rogers & Hahn (2010). Extended-connectivity fingerprints. *Journal of Chemical Information and Modeling*.
+
+# Appendix (Optional)
+
+Leave this section blank unless your instructor asks for extra material (for example: a second random seed, a longer discussion of one drug class, or screenshots of the R console). The main story should stand on its own without an appendix.
